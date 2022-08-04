@@ -41,12 +41,7 @@ export async function run(): Promise<void> {
     // Elasticsearch pass
     const password: string = core.getInput('password', {required: false})
 
-    // Ensure either Cloud ID or ES addresses are set
-    if (cloudId === '' && addresses.length === 0) {
-      throw new Error(
-        'invalid configuration: please set either cloud-id or addresses'
-      )
-    }
+
 
     // get an authenticated HTTP client for the GitHub API
     const client: HttpClient = gh.getClient(repoToken)
@@ -62,23 +57,20 @@ export async function run(): Promise<void> {
       allowList
     )
 
-    // get a configured ES client
-    const esClient = logs.getESClient(cloudId, addresses, username, password)
 
     // get the logs for each job
-    core.debug(`Getting logs for ${jobs.length} jobs`)
+    core.info(`Getting logs for ${jobs.length} jobs`)
     for (const j of jobs) {
       const lines: string[] = await gh.fetchLogs(client, repo, j)
-      core.debug(`Fetched ${lines.length} lines for job ${j.name}`)
+      core.info(`Fetched ${lines.length} lines for job ${j.name}`)
 
       const tmpfile = `./out-${j.id}.log`
 
       // convert logs to ECS and dump to disk
       logs.convert(lines, tmpfile)
 
-      // bulk send to ES
-      const result = await logs.bulkSend(esClient, indexName, tmpfile)
-      core.debug(`Bulk request results: ${result}`)
+
+      core.info(`Bulk request results: DONE}`)
     }
   } catch (e) {
     core.setFailed(`Run failed: ${e}`)
